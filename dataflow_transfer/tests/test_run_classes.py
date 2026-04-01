@@ -140,6 +140,26 @@ def mock_statusdbsession(monkeypatch):
         def get_db_doc(self, ddoc, view, run_id):
             return None
 
+        def get_regex_pattern(self, run_family, run_type):
+            if run_family == "Illumina":
+                if run_type == "NovaSeqXPlus":  # 20251010_LH00202_0284_B22CVHTLT1
+                    return r"^(?P<date>\d{8})_(?P<instrument>[A-Z0-9]+)_\d{4}_(?P<position>(A|B))(?P<flowcell_id>[A-Z0-9]+)$"
+                elif run_type == "NextSeq":  # 251015_VH00203_572_AAHFHCCM5
+                    return r"^(?P<date>\d{6})_(?P<instrument>[A-Z0-9]+)_\d{3}_(?P<flowcell_id>[A-Z0-9]+)$"
+                elif run_type == "MiSeq":  # 251015_M01548_0646_000000000-M6D7K
+                    return r"^(?P<date>\d{6})_(?P<instrument>[A-Z0-9]+)_\d{4}_(?P<flowcell_id>[A-Z0-9\-]+)$"
+                elif run_type == "MiSeqi100":  # 20260128_SH01140_0002_ASC2150561-SC3
+                    return r"^(?P<date>\d{8})_(?P<instrument>[A-Z0-9]+)_\d{4}_A(?P<flowcell_id>[A-Z0-9]{9}-SC3)$"
+            elif run_family == "ONT":
+                if run_type == "PromethION":  # 20251015_1051_3B_PBG60686_0af3a2e0
+                    return r"^(?P<date>\d{8})_(?P<time>\d{4})_(?P<position>[A-Z0-9]{2})_(?P<flowcell_id>P[A-Z0-9]+)_(?P<run_hash>[a-f0-9]{8})$"
+                elif run_type == "MinION":  # 20240229_1404_MN19414_ASH657_7a74bf8f
+                    return r"^(?P<date>\d{8})_(?P<time>\d{4})_(?P<position>MN[A-Z0-9]+)_(?P<flowcell_id>[A-Z0-9]+)_(?P<run_hash>[a-f0-9]{8})$"
+            elif run_family == "Element":
+                if run_type == "AVITI":  # 20251007_AV242106_A2507535225
+                    return r"^(?P<date>\d{8})_(?P<instrument>AV\d{6})_(?P<position>(A|B))(?P<flowcell_id>\d{10})$"
+            return None
+
         def update_db_doc(self, doc):
             pass
 
@@ -458,8 +478,12 @@ def test_update_statusdb(
     class MockDB:
         def __init__(self):
             self.updated_doc = None
+            self.db_name = "mock_db"
 
-        def get_db_doc(self, ddoc, view, run_id):
+        def get_doc_id(self, ddoc, view, run_id):
+            return "mock_doc_id"
+
+        def get_document(self, db, doc_id):
             return {"events": existing_statuses, "files": {}}
 
         def update_db_doc(self, doc):
